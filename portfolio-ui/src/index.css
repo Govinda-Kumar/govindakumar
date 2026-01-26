@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* Keep your custom styles below */
+body {
+  margin: 0;
+  background-color: #141414;
+  color: white;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Define your custom colors for Tailwind v4 */
+@theme {
+  --color-netflix-red: #E50914;
+  --color-netflix-black: #141414;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
