@@ -38,3 +38,13 @@ def get_featured(db: Session = Depends(get_db)):
         
     return project
 
+@app.get("/projects/search")
+def search_projects(q: str = "", db: Session = Depends(get_db)):
+    if not q:
+        return []
+    # Search for the query 'q' in title or description (case-insensitive)
+    return db.query(models.Project).filter(
+        (models.Project.title.icontains(q)) | 
+        (models.Project.description.icontains(q))
+    ).all()
+

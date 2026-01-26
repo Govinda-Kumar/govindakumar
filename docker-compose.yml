@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=netflix_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+
+  admin-service:
+    build: ./admin-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/netflix_db
+    depends_on:
+      - db
+
+  api-service:
+    build: ./api-service
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/netflix_db
+    depends_on:
+      - db
+
+  portfolio-ui:
+    build: ./portfolio-ui
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-service
+    stdin_open: true # Keeps Vite running interactively
+
+volumes:
+  postgres_data:

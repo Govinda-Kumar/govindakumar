@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const Row = ({ title }) => {
+const Row = ({ title, onSelect }) => {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    // Fetch all projects from FastAPI
+    // Connect to your FastAPI to get the list of projects
     axios.get('http://127.0.0.1')
-      .then(res => setProjects(res.data))
-      .catch(err => console.error(err));
+      .then((res) => {
+        setProjects(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching projects for Row:", err);
+      });
   }, []);
 
   return (
     <div className="ml-10 my-10">
+      {/* Category Title (e.g., Trending Now) */}
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
       
       {/* Horizontal Scroll Container */}
@@ -20,16 +25,19 @@ const Row = ({ title }) => {
         {projects.map((project) => (
           <div 
             key={project.id} 
+            // This line triggers the Modal in App.jsx
+            onClick={() => onSelect(project)} 
             className="relative min-w-[240px] h-32 transition-transform duration-300 ease-in-out hover:scale-110 hover:z-30 cursor-pointer"
           >
             <img 
               src={project.thumbnail_url} 
               alt={project.title}
-              className="w-full h-full object-cover rounded-sm"
+              className="w-full h-full object-cover rounded-sm shadow-lg"
             />
-            {/* Subtle Title Overlay on card */}
-            <div className="absolute bottom-2 left-2 text-xs font-bold drop-shadow-lg">
-              {project.title}
+            
+            {/* Hover Overlay Title */}
+            <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
+              <span className="text-xs font-bold truncate">{project.title}</span>
             </div>
           </div>
         ))}
