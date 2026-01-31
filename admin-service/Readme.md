@@ -39,4 +39,4 @@ Notes on static files:
 
 ## Notes
 - Use `admin.localhost` when running with Traefik locally to access the admin over HTTPS. Ensure `/etc/hosts` includes mapping to `127.0.0.1` for `admin.localhost` if necessary.
-- Secrets should be stored in CI or Railway environment variables for production; do not commit `.env` files.
+- Secrets should be stored in CI or Render environment variables for production; do not commit `.env` files.

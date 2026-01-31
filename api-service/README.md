@@ -47,4 +47,4 @@ Environment variables reminder:
 
 Notes:
 - Currently we use plain SQLAlchemy models; if you add migrations consider integrating Alembic.
-- Keep sensitive info out of the repo and provide production credentials via CI/Railway secrets.
+- Keep sensitive info out of the repo and provide production credentials via CI/Render secrets.

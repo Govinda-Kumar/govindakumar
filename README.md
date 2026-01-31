@@ -117,14 +117,9 @@ Notes:
 5) CI/CD notes:
 - CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The pipeline includes a manual approval step (job `hold_deploy`) that **requires human approval** before deploying to production. To receive an email notification when approval is needed, create a Brevo (formerly SendinBlue) account (free tier available) and add the following environment variables in CircleCI:
 
-- `BREVO_API_KEY` — Brevo API key (secret)
-- `BREVO_FROM_EMAIL` — verified sender email for Brevo (e.g., notifications@yourdomain.com)
-- `BREVO_FROM_NAME` — sender name shown in the emails (optional; default: "GovindaKumar CI")
-- `DEPLOY_NOTIFICATION_TO_EMAIL` — email address that will receive the approval request
-- `DEPLOY_REPORT_EMAIL` — email address receiving the post-deploy smoke test report (can be same as above)
-- `API_URL`, `ADMIN_URL`, `UI_URL` — (optional) public URLs for your deployed services so the smoke test can hit `/health` or `/`.
+- `RENDER_DEPLOY_HOOK_URL` — Render deploy webhook URL (CircleCI triggers deployment by POSTing to this URL)
 
-When set, CircleCI will send a nicely formatted HTML email to the approver with a CTA to open the pipeline. After manual approval and deploy, CircleCI will run a smoke test and send a report email with the results. The older `scripts/deploy_to_railway.sh` remains for Railway users and will need real `RAILWAY_TOKEN` and service IDs if used.
+CircleCI workflow: tests → build & push to GHCR → deploy to Render (main branch only).
 
 ---
 
@@ -143,7 +138,7 @@ Below are the key files and what they do.
 - `docker-compose.override.yml` — Local overrides for Traefik labels and dev routing (used to get friendly hostnames like `admin.localhost`).
 - `docker-compose.prod.yml` — Production-oriented compose file: builds images with production env values and runs them for local validation.
 - `traefik/README.md` — How to configure Traefik and local TLS, CA/ACME notes and mkcert guidance.
-- `scripts/README.md` — How to use `scripts/build_and_push.sh` and `scripts/deploy_to_railway.sh` (used by CI for GHCR+Railway flows).
+- `scripts/README.md` — How to use `scripts/build_and_push.sh` and `scripts/deploy_to_render.sh` (used by CI for GHCR+Render flows).
 - `admin-service/Readme.md` — Per-service README: commands to run, build, and test the Django control plane.
 - `api-service/README.md` — Per-service README: API commands, endpoints, and environment variables for the FastAPI data plane.
 - `portfolio-ui/README.md` — Per-service README: how to run Vite locally, build and serve the production image via nginx.
@@ -158,5 +153,5 @@ Below are the key files and what they do.
 - `portfolio-ui/` — React + Vite frontend; production build served by nginx in the Docker image.
 
 - `scripts/build_and_push.sh` — Build and push Docker images to GHCR (used by CI).
-- `scripts/deploy_to_railway.sh` — Helper to trigger Railway deploys (replace placeholders with your Railway service IDs).
+- `scripts/deploy_to_render.sh` — Trigger Render deployment via deploy hook (used by CI).
 

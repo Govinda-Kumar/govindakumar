@@ -132,15 +132,6 @@ jobs:
             # Expect these env vars in CircleCI project settings:
             # GHCR_OWNER (or GITHUB_USER), GHCR_PAT
             ./scripts/build_and_push.sh "${CIRCLE_SHA1}"
-      - run:
-          name: Deploy to Railway (optional)
-          command: |
-            # Expect RAILWAY_TOKEN and RAILWAY_PROJECT_ID to be set as secrets
-            # The deploy script is a helper; customize to your Railway services.
-            ./scripts/deploy_to_railway.sh \
-              "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-admin-service:${CIRCLE_SHA1}" \
-              "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-api-service:${CIRCLE_SHA1}" \
-              "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-portfolio-ui:${CIRCLE_SHA1}"
 
   deploy_render:
     docker:

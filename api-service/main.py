@@ -2,19 +2,12 @@ from fastapi import FastAPI, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
+from contextlib import asynccontextmanager
 import models
 from database import get_db
 import logging
 import sys
 import os
-
-# Database Dependency
-# def get_db():
-#     db = database.SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
 
 # Configure logging
 logging.basicConfig(
@@ -24,7 +17,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="GovindaKumar API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("🚀 API Service Started!")
+    logger.info(f"Environment: {os.getenv('ENV', 'development')}")
+    yield
+    # Shutdown
+    logger.info("🛑 API Service Shutting down")
+
+app = FastAPI(title="GovindaKumar API", version="1.0.0", lifespan=lifespan)
 
 # CORS Configuration
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
@@ -36,11 +38,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("🚀 API Service Started!")
-    logger.info(f"Environment: {os.getenv('ENV', 'development')}")
 @app.get("/")
 def root():
     logger.info("Root endpoint called")
