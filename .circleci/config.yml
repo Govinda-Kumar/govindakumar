@@ -128,6 +128,21 @@ jobs:
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-api-service:${CIRCLE_SHA1}" \
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-portfolio-ui:${CIRCLE_SHA1}"
 
+      - notify_approval:
+          docker:
+            - image: cimg/python:3.12
+          steps:
+            - checkout
+            - run:
+                name: Notify Slack for manual approval
+                command: |
+                  if [ -z "${SLACK_APPROVAL_WEBHOOK}" ]; then
+                    echo "SLACK_APPROVAL_WEBHOOK not set; skipping notification."
+                    exit 0
+                  fi
+                  PAYLOAD="{\"text\": \"Deployment pending approval for *${CIRCLE_PROJECT_REPONAME}* on branch ${CIRCLE_BRANCH} (commit ${CIRCLE_SHA1}). Approve: ${CIRCLE_BUILD_URL}\"}"
+                  curl -s -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_APPROVAL_WEBHOOK" || echo "Slack notify failed"
+
   deploy_render:
     docker:
       - image: cimg/python:3.12
@@ -156,9 +171,13 @@ workflows:
       - build_and_push:
           requires:
             - test
-      - deploy_render:
+      - hold_deploy:
+          type: approval
           requires:
             - build_and_push
+      - deploy_render:
+          requires:
+            - hold_deploy
           filters:
             branches:
               only: main
