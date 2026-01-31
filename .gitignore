@@ -81,4 +81,5 @@ portfolio-ui/dist/
 portfolio-ui/build/
 
 # Docker
-docker-compose.override.yml
+# docker-compose.override.yml (tracked now to include Traefik config)
+traefik/acme.json

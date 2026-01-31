@@ -1,70 +1,68 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-netflix_db}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=netflix_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     ports:
       - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
 
   admin-service:
-    build: 
-      context: ./admin-service
-      dockerfile: Dockerfile
+    build: ./admin-service
     ports:
       - "8000:8000"
     volumes:
-      - ./admin-service:/app  # Mount for hot-reload
+      - ./admin-service:/app
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-netflix_db}
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-dev-key}
-      - DJANGO_DEBUG=True
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/netflix_db
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=${POSTGRES_DB:-netflix_db}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=netflix_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     depends_on:
       db:
         condition: service_healthy
-    command: python manage.py runserver 0.0.0.0:8000  # Dev server with hot-reload
+    restart: on-failure
+    # Entrypoint will handle migrations & collectstatic; image CMD runs gunicorn
+
 
   api-service:
-    build:
-      context: ./api-service
-      dockerfile: Dockerfile
+    build: ./api-service
     ports:
       - "8001:8001"
     volumes:
-      - ./api-service:/app  # Mount for hot-reload
+      - ./api-service:/app
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-netflix_db}
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/netflix_db
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=netflix_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
       - ENV=development
     depends_on:
       db:
         condition: service_healthy
-    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload  # Dev mode with hot-reload
+    restart: on-failure
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
 
   portfolio-ui:
     build:
       context: ./portfolio-ui
-      dockerfile: Dockerfile.dev  # Use development Dockerfile
     ports:
       - "5173:5173"
     volumes:
       - ./portfolio-ui:/app
-      - /app/node_modules  # Prevent overwriting node_modules
+      - /app/node_modules
     environment:
       - VITE_API_URL=http://localhost:8001
     depends_on:

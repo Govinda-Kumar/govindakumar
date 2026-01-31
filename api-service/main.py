@@ -8,8 +8,6 @@ import logging
 import sys
 import os
 
-app = FastAPI(title="GovindaKumar Portfolio API")
-
 # Database Dependency
 # def get_db():
 #     db = database.SessionLocal()
@@ -88,9 +86,7 @@ def get_projects(
     return projects
 
 
-@app.get("/projects")
-def get_all_projects(db: Session = Depends(get_db)):
-    return db.query(models.Project).all()
+# Note: The parameterized `get_projects` above handles filtering and listing. Removed duplicate endpoint to avoid overriding behavior.
 
 @app.get("/projects/featured")
 def get_featured(db: Session = Depends(get_db)):

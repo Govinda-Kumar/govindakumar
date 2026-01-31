@@ -1,0 +1,13 @@
+http:
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  routers: {}
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
