@@ -9,3 +9,7 @@ psycopg2-binary==2.9.10
 # Data validation
 pydantic==2.10.5
 pydantic-settings==2.7.1
+
+# Test dependencies
+pytest>=7.4
+requests>=2.31

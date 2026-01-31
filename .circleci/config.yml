@@ -8,7 +8,19 @@ jobs:
       - image: cimg/python:3.12
     steps:
       - checkout
-      - run: python -m pip install -r admin-service/requirements.txt
+      - restore_cache:
+          keys:
+            - v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
+            - v1-pip-cache-
+      - run:
+          name: Install Python deps
+          command: |
+            python -m pip install --upgrade pip
+            python -m pip install -r admin-service/requirements.txt
+      - save_cache:
+          paths:
+            - ~/.cache/pip
+          key: v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
       - run:
           name: Check for missing Django migrations
           command: |
@@ -21,6 +33,10 @@ jobs:
       - image: cimg/python:3.12
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
+            - v1-pip-cache-
       - setup_remote_docker
       - run:
           name: Start test Postgres
@@ -28,8 +44,16 @@ jobs:
             docker run -d --name ci-postgres -e POSTGRES_DB=netflix_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15
             # wait for pg to accept connections
             until docker exec ci-postgres pg_isready -U postgres -h localhost >/dev/null 2>&1; do sleep 1; done
-      - run: python -m pip install -r admin-service/requirements.txt
-      - run: python -m pip install -r api-service/requirements.txt
+      - run:
+          name: Install Python deps
+          command: |
+            python -m pip install --upgrade pip
+            python -m pip install -r admin-service/requirements.txt
+            python -m pip install -r api-service/requirements.txt
+      - save_cache:
+          paths:
+            - ~/.cache/pip
+          key: v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
       - run:
           name: Run Django tests against Postgres
           command: |
@@ -38,10 +62,10 @@ jobs:
             python manage.py migrate --noinput
             python manage.py test
       - run:
-          name: Placeholder - API integration tests
+          name: Run API integration tests (pytest)
           command: |
-            # Add pytest or requests-based integration tests for the API here
-            echo "Add FastAPI integration tests here"
+            cd api-service
+            pytest -q
       - run:
           name: Teardown DB
           command: |
@@ -52,17 +76,30 @@ jobs:
       - image: cimg/python:3.12
     steps:
       - checkout
-      - run: python -m pip install -r admin-service/requirements.txt
-      - run: python -m pip install -r api-service/requirements.txt
+      - restore_cache:
+          keys:
+            - v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
+            - v1-pip-cache-
+      - run:
+          name: Install Python deps
+          command: |
+            python -m pip install --upgrade pip
+            python -m pip install -r admin-service/requirements.txt
+            python -m pip install -r api-service/requirements.txt
+      - save_cache:
+          paths:
+            - ~/.cache/pip
+          key: v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
       - run:
           name: Run Django tests
           command: |
             cd admin-service
             python manage.py test || true
       - run:
-          name: Placeholder - API tests
+          name: Run API tests (pytest)
           command: |
-            echo "Add FastAPI tests here"
+            cd api-service
+            pytest -q || true
 
   build_and_push:
     docker:
