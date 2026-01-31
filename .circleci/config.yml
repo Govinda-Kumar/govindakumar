@@ -44,7 +44,8 @@ jobs:
 
   integration_tests:
     docker:
-      - image: cimg/python:3.12
+      - image: cimg/python:3.12 # Primary container (Django runs here)
+      - image: cimg/postgres:15 # Secondary container (Postgres runs here)
     steps:
       - checkout
       - restore_cache:
