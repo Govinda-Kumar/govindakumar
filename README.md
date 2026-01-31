@@ -115,7 +115,14 @@ Notes:
    - Ensure `GHCR_PAT` and `GHCR_OWNER` are set in CI or your environment for pushing to GHCR.
 
 5) CI/CD notes:
-- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The pipeline includes a manual approval step (job `hold_deploy`) that **requires human approval** before deploying to production. To receive an email notification when approval is needed, create a SendGrid API key and add the key as an environment variable in CircleCI named `SENDGRID_API_KEY`. Also add `DEPLOY_NOTIFICATION_TO_EMAIL` and `DEPLOY_NOTIFICATION_FROM_EMAIL`. When set, CircleCI will send a short email with a link to the pipeline asking for approval before the deployment can proceed. The older `scripts/deploy_to_railway.sh` remains for Railway users and will need real `RAILWAY_TOKEN` and service IDs if used.
+- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The pipeline includes a manual approval step (job `hold_deploy`) that **requires human approval** before deploying to production. To receive an email notification when approval is needed, create a SendGrid API key (free tier available) and add the key as an environment variable in CircleCI named `SENDGRID_API_KEY`. Add the following CircleCI env vars:
+
+- `DEPLOY_NOTIFICATION_TO_EMAIL` — email address that will receive the approval request
+- `DEPLOY_NOTIFICATION_FROM_EMAIL` — a verified sender email for the SendGrid account
+- `DEPLOY_REPORT_EMAIL` — email address receiving the post-deploy smoke test report (can be same as above)
+- `API_URL`, `ADMIN_URL`, `UI_URL` — (optional) public URLs for your deployed services so the smoke test can hit `/health` or `/`.
+
+When set, CircleCI will send a nicely formatted HTML email to the approver with a CTA to open the pipeline. After manual approval and deploy, CircleCI will run a smoke test and send a report email with the results. The older `scripts/deploy_to_railway.sh` remains for Railway users and will need real `RAILWAY_TOKEN` and service IDs if used.
 
 ---
 

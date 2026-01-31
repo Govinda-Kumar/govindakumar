@@ -136,7 +136,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Send approval email (SendGrid)
+          name: Send approval email (SendGrid, HTML)
           command: |
             if [ -z "${SENDGRID_API_KEY}" ] || [ -z "${DEPLOY_NOTIFICATION_TO_EMAIL}" ] || [ -z "${DEPLOY_NOTIFICATION_FROM_EMAIL}" ]; then
               echo "SendGrid env vars not set; skipping email notification."
@@ -144,14 +144,72 @@ jobs:
             fi
 
             SUBJECT="Deployment pending approval for ${CIRCLE_PROJECT_REPONAME}"
-            BODY="A deployment for ${CIRCLE_PROJECT_REPONAME} on branch ${CIRCLE_BRANCH} (commit ${CIRCLE_SHA1}) is awaiting approval: ${CIRCLE_BUILD_URL}"
 
-            # Send a simple email via SendGrid API
+            # HTML body with a CTA button linking back to the pipeline
+            HTML_BODY="<html><body style=\"font-family:Arial,sans-serif;color:#111\">\
+              <h2>Deployment pending approval</h2>\
+              <p>A deployment for <strong>${CIRCLE_PROJECT_REPONAME}</strong> on branch <code>${CIRCLE_BRANCH}</code> (commit <code>${CIRCLE_SHA1}</code>) is awaiting your approval.</p>\
+              <p><a href=\"${CIRCLE_BUILD_URL}\" style=\"display:inline-block;padding:10px 14px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none\">Open pipeline & approve</a></p>\
+              <p style=\"color:#6b7280;font-size:13px\">You can approve the pipeline in CircleCI to continue with deploy. This message is automated.</p>\
+            </body></html>"
+
+            PAYLOAD=$(jq -n --arg to "${DEPLOY_NOTIFICATION_TO_EMAIL}" --arg from "${DEPLOY_NOTIFICATION_FROM_EMAIL}" --arg subject "$SUBJECT" --arg html "$HTML_BODY" '{personalizations:[{to:[{email:$to}]}],from:{email:$from},subject:$subject,content:[{type:"text/html",value:$html}] }')
+
+            # Send with SendGrid
             curl --silent --fail -X POST "https://api.sendgrid.com/v3/mail/send" \
               -H "Authorization: Bearer ${SENDGRID_API_KEY}" \
               -H "Content-Type: application/json" \
-              -d '{"personalizations":[{"to":[{"email":"'"${DEPLOY_NOTIFICATION_TO_EMAIL}"'"}]}],"from":{"email":"'"${DEPLOY_NOTIFICATION_FROM_EMAIL}"'"},"subject":"'"${SUBJECT}"'","content":[{"type":"text/plain","value":"'"${BODY}"'"}]}' || echo "sendgrid request failed"
+              -d "$PAYLOAD" || echo "sendgrid request failed"
 
+  smoke_test:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Run smoke tests (curl /health)
+          command: |
+            chmod +x scripts/smoke_test.sh
+            # Run tests; capture exit code but continue to send report
+            ./scripts/smoke_test.sh > /tmp/smoke_report.txt || true
+            cat /tmp/smoke_report.txt
+            RC=$?
+      - run:
+          name: Send smoke test report (SendGrid)
+          command: |
+            if [ -z "${SENDGRID_API_KEY}" ] || [ -z "${DEPLOY_REPORT_EMAIL}" ] || [ -z "${DEPLOY_NOTIFICATION_FROM_EMAIL}" ]; then
+              echo "SendGrid or report email env vars not set; skipping report email."
+              exit 0
+            fi
+
+            # Read report
+            REPORT_HTML=$(awk 'BEGIN{print "<pre style=\"font-family:monospace;white-space:pre-wrap;\">"} {gsub("&","&amp;"); gsub("<","&lt;"); gsub(">","&gt;"); print} END{print "</pre>"}' /tmp/smoke_report.txt)
+            SUMMARY="Smoke test report for ${CIRCLE_PROJECT_REPONAME} (branch: ${CIRCLE_BRANCH})"
+            SUBJECT="Deployment report: ${CIRCLE_PROJECT_REPONAME} - $( [ -s /tmp/smoke_report.txt ] && grep -q FAIL /tmp/smoke_report.txt && echo FAILED || echo SUCCESS )"
+
+            HTML_BODY="<html><body style=\"font-family:Arial,sans-serif;color:#111\">\
+              <h2>${SUBJECT}</h2>\
+              <p>Pipeline: <a href=\"${CIRCLE_BUILD_URL}\">Open in CircleCI</a></p>\
+              <h3>Report</h3>\
+              ${REPORT_HTML}\
+            </body></html>"
+
+            PAYLOAD=$(jq -n --arg to "${DEPLOY_REPORT_EMAIL}" --arg from "${DEPLOY_NOTIFICATION_FROM_EMAIL}" --arg subject "$SUBJECT" --arg html "$HTML_BODY" '{personalizations:[{to:[{email:$to}]}],from:{email:$from},subject:$subject,content:[{type:"text/html",value:$html}] }')
+
+            curl --silent --fail -X POST "https://api.sendgrid.com/v3/mail/send" \
+              -H "Authorization: Bearer ${SENDGRID_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d "$PAYLOAD" || echo "sendgrid report request failed"
+
+      - run:
+          name: Exit with smoke test status
+          command: |
+            # Exit non-zero if the smoke tests failed
+            if grep -q "FAIL" /tmp/smoke_report.txt; then
+              echo "Smoke tests failed"
+              exit 2
+            fi
+            echo "Smoke tests passed"
   deploy_render:
     docker:
       - image: cimg/python:3.12
