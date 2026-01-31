@@ -22,3 +22,13 @@ govindakumar/
 │
 ├── docker-compose.yml   # Orchestrates all services
 └── .env                 # Shared environment variables (DB URLs, etc.)
+
+
+# Build production images
+docker-compose -f docker-compose.prod.yml build
+
+# Start in production mode
+docker-compose -f docker-compose.prod.yml up
+
+# Test:
+# Frontend should be on http://localhost:80

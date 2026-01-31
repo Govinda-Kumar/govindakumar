@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:15-alpine
+    platform: linux/arm64
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  admin-service:
+    build: 
+      context: ./admin-service
+      dockerfile: Dockerfile
+    platform: linux/arm64
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_DEBUG=False
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api-service:
+    build:
+      context: ./api-service
+      dockerfile: Dockerfile
+    platform: linux/arm64
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  portfolio-ui:
+    build:
+      context: ./portfolio-ui
+      dockerfile: Dockerfile
+    platform: linux/arm64
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    depends_on:
+      - api-service
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

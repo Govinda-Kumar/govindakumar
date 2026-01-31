@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Info } from 'lucide-react';
-import axios from 'axios';
 import { getFeaturedProject } from '../api';
 
 const Hero = () => {
@@ -23,8 +22,9 @@ const Hero = () => {
             <div className="absolute inset-0">
                 <img
                     src={movie.thumbnail_url}
-                    alt={movie.title}
-                    className="w-full h-full object-cover brightness-[0.7]"
+                    alt="" // Empty alt prevents the text from showing if the image fails
+                    className="w-full h-full object-cover brightness-[0.7] bg-netflix-black"
+                    onError={(e) => { e.target.style.display = 'none'; }} // Completely hides failed images
                 />
                 {/* Cinematic Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-netflix-black via-transparent to-transparent" />

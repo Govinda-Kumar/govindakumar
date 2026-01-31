@@ -1,46 +1,47 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { getProjects } from '../api'; // Using your helper
 
-const Row = ({ title, onSelect }) => {
+const Row = ({ title, category, isFeatured, onSelect }) => {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    // Connect to your FastAPI to get the list of projects
-    axios.get('http://127.0.0.1')
+    // Construct params to match your FastAPI query parameters
+    const params = {};
+    if (isFeatured) params.is_featured = "true";
+    if (category) params.category = category;
+
+    getProjects(params)
       .then((res) => {
-        setProjects(res.data);
+        setProjects(Array.isArray(res.data) ? res.data : []);
       })
       .catch((err) => {
-        console.error("Error fetching projects for Row:", err);
+        console.error(`Error loading row "${title}":`, err);
       });
-  }, []);
+  }, [category, isFeatured, title]);
 
   return (
     <div className="ml-10 my-10">
-      {/* Category Title (e.g., Trending Now) */}
       <h2 className="text-2xl font-bold mb-4">{title}</h2>
-      
-      {/* Horizontal Scroll Container */}
       <div className="flex gap-2 overflow-x-scroll no-scrollbar p-4 -m-4">
-        {projects.map((project) => (
-          <div 
-            key={project.id} 
-            // This line triggers the Modal in App.jsx
-            onClick={() => onSelect(project)} 
-            className="relative min-w-[240px] h-32 transition-transform duration-300 ease-in-out hover:scale-110 hover:z-30 cursor-pointer"
-          >
-            <img 
-              src={project.thumbnail_url} 
-              alt={project.title}
-              className="w-full h-full object-cover rounded-sm shadow-lg"
-            />
-            
-            {/* Hover Overlay Title */}
-            <div className="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
-              <span className="text-xs font-bold truncate">{project.title}</span>
+        {projects.length > 0 ? (
+          projects.map((project) => (
+            <div
+              key={project.id}
+              onClick={() => onSelect && onSelect(project)}
+              className="relative min-w-[240px] h-32 transition-transform duration-300 hover:scale-110 hover:z-50 cursor-pointer"
+            >
+              <img
+                src={project.thumbnail_url}
+                className="w-full h-full object-cover rounded-sm shadow-md"
+                alt="" // Keeps "Dummy" text hidden
+              />
             </div>
+          ))
+        ) : (
+          <div className="h-32 flex items-center text-gray-600 italic">
+            No projects found in this category.
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

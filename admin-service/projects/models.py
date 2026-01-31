@@ -6,8 +6,8 @@ class Project(models.Model):
     description = models.TextField()
     
     # Media Links (You can use images/videos from URLs)
-    thumbnail_url = models.URLField(max_length=500) 
-    video_preview_url = models.URLField(max_length=500, help_text="Short teaser video URL")
+    thumbnail_url = models.URLField(max_length=1000) 
+    video_preview_url = models.URLField(max_length=1000, help_text="Short teaser video URL")
     
     # Categorization for the Netflix Rows
     CATEGORY_CHOICES = [
