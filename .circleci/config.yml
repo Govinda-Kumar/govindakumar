@@ -136,10 +136,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Send approval email (SendGrid, HTML)
+          name: Send approval email (Mailgun, HTML)
           command: |
-            if [ -z "${SENDGRID_API_KEY}" ] || [ -z "${DEPLOY_NOTIFICATION_TO_EMAIL}" ] || [ -z "${DEPLOY_NOTIFICATION_FROM_EMAIL}" ]; then
-              echo "SendGrid env vars not set; skipping email notification."
+            if [ -z "${MAILGUN_API_KEY}" ] || [ -z "${MAILGUN_DOMAIN}" ] || [ -z "${DEPLOY_NOTIFICATION_TO_EMAIL}" ] || [ -z "${MAILGUN_FROM_EMAIL}" ]; then
+              echo "Mailgun env vars not set; skipping email notification."
               exit 0
             fi
 
@@ -153,13 +153,13 @@ jobs:
               <p style=\"color:#6b7280;font-size:13px\">You can approve the pipeline in CircleCI to continue with deploy. This message is automated.</p>\
             </body></html>"
 
-            PAYLOAD=$(jq -n --arg to "${DEPLOY_NOTIFICATION_TO_EMAIL}" --arg from "${DEPLOY_NOTIFICATION_FROM_EMAIL}" --arg subject "$SUBJECT" --arg html "$HTML_BODY" '{personalizations:[{to:[{email:$to}]}],from:{email:$from},subject:$subject,content:[{type:"text/html",value:$html}] }')
-
-            # Send with SendGrid
-            curl --silent --fail -X POST "https://api.sendgrid.com/v3/mail/send" \
-              -H "Authorization: Bearer ${SENDGRID_API_KEY}" \
-              -H "Content-Type: application/json" \
-              -d "$PAYLOAD" || echo "sendgrid request failed"
+            # Send with Mailgun
+            curl -s --user "api:${MAILGUN_API_KEY}" \
+              "https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages" \
+              -F from="${MAILGUN_FROM_EMAIL}" \
+              -F to="${DEPLOY_NOTIFICATION_TO_EMAIL}" \
+              -F subject="${SUBJECT}" \
+              -F html="${HTML_BODY}" || echo "mailgun request failed"
 
   smoke_test:
     docker:
@@ -175,16 +175,15 @@ jobs:
             cat /tmp/smoke_report.txt
             RC=$?
       - run:
-          name: Send smoke test report (SendGrid)
+          name: Send smoke test report (Mailgun)
           command: |
-            if [ -z "${SENDGRID_API_KEY}" ] || [ -z "${DEPLOY_REPORT_EMAIL}" ] || [ -z "${DEPLOY_NOTIFICATION_FROM_EMAIL}" ]; then
-              echo "SendGrid or report email env vars not set; skipping report email."
+            if [ -z "${MAILGUN_API_KEY}" ] || [ -z "${MAILGUN_DOMAIN}" ] || [ -z "${DEPLOY_REPORT_EMAIL}" ] || [ -z "${MAILGUN_FROM_EMAIL}" ]; then
+              echo "Mailgun or report email env vars not set; skipping report email."
               exit 0
             fi
 
-            # Read report
+            # Read report and sanitize for HTML
             REPORT_HTML=$(awk 'BEGIN{print "<pre style=\"font-family:monospace;white-space:pre-wrap;\">"} {gsub("&","&amp;"); gsub("<","&lt;"); gsub(">","&gt;"); print} END{print "</pre>"}' /tmp/smoke_report.txt)
-            SUMMARY="Smoke test report for ${CIRCLE_PROJECT_REPONAME} (branch: ${CIRCLE_BRANCH})"
             SUBJECT="Deployment report: ${CIRCLE_PROJECT_REPONAME} - $( [ -s /tmp/smoke_report.txt ] && grep -q FAIL /tmp/smoke_report.txt && echo FAILED || echo SUCCESS )"
 
             HTML_BODY="<html><body style=\"font-family:Arial,sans-serif;color:#111\">\
@@ -194,12 +193,13 @@ jobs:
               ${REPORT_HTML}\
             </body></html>"
 
-            PAYLOAD=$(jq -n --arg to "${DEPLOY_REPORT_EMAIL}" --arg from "${DEPLOY_NOTIFICATION_FROM_EMAIL}" --arg subject "$SUBJECT" --arg html "$HTML_BODY" '{personalizations:[{to:[{email:$to}]}],from:{email:$from},subject:$subject,content:[{type:"text/html",value:$html}] }')
-
-            curl --silent --fail -X POST "https://api.sendgrid.com/v3/mail/send" \
-              -H "Authorization: Bearer ${SENDGRID_API_KEY}" \
-              -H "Content-Type: application/json" \
-              -d "$PAYLOAD" || echo "sendgrid report request failed"
+            # Send via Mailgun
+            curl -s --user "api:${MAILGUN_API_KEY}" \
+              "https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages" \
+              -F from="${MAILGUN_FROM_EMAIL}" \
+              -F to="${DEPLOY_REPORT_EMAIL}" \
+              -F subject="${SUBJECT}" \
+              -F html="${HTML_BODY}" || echo "mailgun report request failed"
 
       - run:
           name: Exit with smoke test status
