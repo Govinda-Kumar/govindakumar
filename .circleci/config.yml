@@ -22,11 +22,25 @@ jobs:
             - ~/.cache/pip
           key: v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
       - run:
+          name: Start temporary Postgres for migration checks
+          command: |
+            # Use remote docker to run a disposable Postgres instance so Django can check migration history
+            setup_remote_docker
+            docker run -d --name ci-postgres-migrations -e POSTGRES_DB=${POSTGRES_DB:-govindakumar_db} -e POSTGRES_USER=${POSTGRES_USER:-postgres} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} -p 5432:5432 postgres:15
+            # wait for pg to accept connections
+            until docker exec ci-postgres-migrations pg_isready -U ${POSTGRES_USER:-postgres} -h localhost >/dev/null 2>&1; do sleep 1; done
+      - run:
           name: Check for missing Django migrations
           command: |
             cd admin-service
+            # Point Django at the temporary postgres instance we just started
+            export DATABASE_URL=postgres://postgres:postgres@localhost:5432/${POSTGRES_DB:-govindakumar_db}
             # Will return non-zero if models changed but no migration exists
             python manage.py makemigrations --dry-run --check
+      - run:
+          name: Teardown temporary Postgres
+          command: |
+            docker rm -f ci-postgres-migrations || true
 
   integration_tests:
     docker:
