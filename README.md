@@ -115,11 +115,11 @@ Notes:
    - Ensure `GHCR_PAT` and `GHCR_OWNER` are set in CI or your environment for pushing to GHCR.
 
 5) CI/CD notes:
-- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The pipeline includes a manual approval step (job `hold_deploy`) that **requires human approval** before deploying to production. To receive an email notification when approval is needed, create a Mailgun account (free tier available) and add the following environment variables in CircleCI:
+- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The pipeline includes a manual approval step (job `hold_deploy`) that **requires human approval** before deploying to production. To receive an email notification when approval is needed, create a Brevo (formerly SendinBlue) account (free tier available) and add the following environment variables in CircleCI:
 
-- `MAILGUN_API_KEY` — Mailgun API key (secret)
-- `MAILGUN_DOMAIN` — Mailgun domain where messages will be sent from (e.g., mg.yourdomain.com)
-- `MAILGUN_FROM_EMAIL` — verified sender email for Mailgun
+- `BREVO_API_KEY` — Brevo API key (secret)
+- `BREVO_FROM_EMAIL` — verified sender email for Brevo (e.g., notifications@yourdomain.com)
+- `BREVO_FROM_NAME` — sender name shown in the emails (optional; default: "GovindaKumar CI")
 - `DEPLOY_NOTIFICATION_TO_EMAIL` — email address that will receive the approval request
 - `DEPLOY_REPORT_EMAIL` — email address receiving the post-deploy smoke test report (can be same as above)
 - `API_URL`, `ADMIN_URL`, `UI_URL` — (optional) public URLs for your deployed services so the smoke test can hit `/health` or `/`.
