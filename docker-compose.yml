@@ -23,6 +23,7 @@ services:
       - ./admin-service:/app
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/netflix_db
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,admin.localhost
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - POSTGRES_DB=netflix_db

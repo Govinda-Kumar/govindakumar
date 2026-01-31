@@ -1,16 +1,27 @@
-# React + Vite
+# portfolio-ui — React + Vite (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the React + Vite application used as the portfolio UI. The production Docker image builds the app and serves it via nginx.
 
-Currently, two official plugins are available:
+## Useful commands (development)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Install deps: npm install
+- Run dev server with HMR: npm run dev
+- Lint: npm run lint
+- Run unit tests (if present): npm test
 
-## React Compiler
+## Build & Docker
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Build production bundle: npm run build
+- Build Docker image locally: docker build -t govindakumar-portfolio-ui:local .
+- Run dockerized UI (prod-like): docker run -p 80:80 govindakumar-portfolio-ui:local
 
-## Expanding the ESLint configuration
+## Env variables
+- `VITE_API_URL` — Base URL for API; set in `portfolio-ui/.env` for local dev, or via container env in production.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Files & their jobs
+- `Dockerfile` — Multi-stage build: builds the frontend (`npm run build`) and copies the static output into an nginx image.
+- `nginx.conf` — Custom nginx config used to serve the built SPA and handle caching and security headers.
+- `package.json` — Has scripts for `dev`, `build`, `lint`, and `test`.
+
+Notes:
+- In development the Vite dev server runs on port 5173; in production static files are served on port 80 by nginx inside the container.

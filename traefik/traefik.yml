@@ -7,21 +7,12 @@ entryPoints:
 providers:
   docker:
     exposedByDefault: false
-  file:
-    filename: /etc/traefik/dynamic.yml
 
 api:
   dashboard: true
+  insecure: true
 
 log:
   level: INFO
 
-# For dev we recommend using mkcert and mounting certs or using the TLS options below
-certificatesResolvers:
-  myresolver:
-    acme:
-      # NOTE: use staging for testing to avoid rate limits
-      caServer: https://acme-staging-v02.api.letsencrypt.org/directory
-      email: you@example.com
-      storage: /acme.json
-      tlsChallenge: {}
+# Note: ACME/file provider disabled for local development to avoid intermittent reloads and permission issues.

@@ -1,3 +1,5 @@
+# GovindaKumar Portfolio
+
 ## Portfolio
 
 govindakumar/
@@ -23,67 +25,108 @@ govindakumar/
 ├── docker-compose.yml   # Orchestrates all services
 └── .env                 # Shared environment variables (DB URLs, etc.)
 
+A small monorepo containing:
+- `admin-service` — Django backend (control plane)
+- `api-service` — FastAPI backend (data plane)
+- `portfolio-ui` — React + Vite frontend
 
-# Development (local) 🔧
+This README provides step-by-step commands for Local (development) and Production (local test & deployment) and then explains the role of important files.
 
-Requirements: Docker & Docker Compose, mkcert (recommended for local TLS)
+---
 
-1. Copy environment examples and fill values:
+Quick production build (one-liners):
+
+- Build production images: `docker compose -f docker-compose.prod.yml build`
+- Start production stack locally: `docker compose -f docker-compose.prod.yml up -d`
+
+---
+
+## Local Development (quick start) 🔧
+
+Prerequisites:
+- Docker & Docker Compose v2+ installed
+- mkcert (recommended) or any way to provide TLS certs for Traefik if you want clean HTTPS locally
+
+1) Copy environment examples and configure values:
    - cp .env.example .env
    - cp admin-service/.env.example admin-service/.env
    - cp api-service/.env.example api-service/.env
    - cp portfolio-ui/.env.example portfolio-ui/.env
 
-2. Start services with Traefik (dev TLS+routing):
+2) Start Traefik + core services (development):
    - docker compose up -d traefik db admin-service api-service portfolio-ui
 
-3. Access services in browser:
-   - Django Admin: https://admin.localhost (uses Traefik routing)
+3) Useful local commands:
+   - View logs: docker compose logs -f admin-service
+   - Restart a service: docker compose restart admin-service
+   - Execute a shell in a service: docker compose exec admin-service sh
+   - Run Django management commands locally: docker compose exec admin-service python manage.py migrate
+
+4) Access services in browser:
+   - Django: https://admin.localhost
    - API: https://api.localhost
    - Frontend: https://ui.localhost
 
 Notes:
-- For local TLS use mkcert and place certificates where Traefik can mount them, or adjust `traefik/traefik.yml` to use your resolver.
-- Entrypoints in `admin-service` and `api-service` wait for Postgres and run migrations/collectstatic automatically.
+- Traefik routes hostnames to containers using `docker-compose.override.yml` labels. Add entries to `/etc/hosts` for `admin.localhost`, `api.localhost`, and `ui.localhost` if needed.
+- The `entrypoint.sh` scripts wait for Postgres and perform migrations/collectstatic for admin-service and start the app for api-service.
 
 ---
 
-# Production (Docker Compose / Railway) 🚀
+## Production (local testing & deployment) 🚀
 
-Production uses `docker-compose.prod.yml` which builds images ready for deployment.
-
-1. Build images locally (for testing):
+1) Build production images locally (for validation):
    - docker compose -f docker-compose.prod.yml build
 
-2. Start production stack locally:
+2) Start the production stack locally:
    - docker compose -f docker-compose.prod.yml up -d
 
-3. Frontend should be served on port 80 (or via Traefik in your cloud provider).
+3) Helpful production commands:
+   - View running containers: docker compose -f docker-compose.prod.yml ps
+   - Tail logs: docker compose -f docker-compose.prod.yml logs -f admin-service
+   - Stop & remove: docker compose -f docker-compose.prod.yml down --volumes
+
+4) Pushing images to registry (manual flow):
+   - Build and tag: ./scripts/build_and_push.sh <tag>
+   - Ensure `GHCR_PAT` and `GHCR_OWNER` are set in CI or your environment for pushing to GHCR.
+
+5) CI/CD notes:
+- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR, and run `scripts/deploy_to_railway.sh` (the Railway helper needs real service IDs and `RAILWAY_TOKEN` to complete deploys).
 
 ---
 
-# CI/CD and Registry
-
-- We recommend using GitHub Container Registry (GHCR) to host Docker images and CircleCI to build/push images and trigger Railway deploys.
-
-- CircleCI setup (high level):
-  1. Create a GitHub Personal Access Token (PAT) with `write:packages` and `delete:packages` and store it as `GHCR_PAT` in CircleCI Project Settings.
-  2. Add `GHCR_OWNER` (your GH org or username) and `GHCR_REPO` (defaults to `govindakumar`), and `GITHUB_USER` if needed.
-  3. Add `RAILWAY_TOKEN` and `RAILWAY_PROJECT_ID` to CircleCI when you set up Railway.
-  4. The CircleCI pipeline (`.circleci/config.yml`) will run tests, build images via `scripts/build_and_push.sh`, push to GHCR, and call `scripts/deploy_to_railway.sh` (you must customize Railway service ids inside that script to finish deployment automation).
-
-- Quick manual GHCR test:
-  - docker build -t ghcr.io/<owner>/govindakumar-admin-service:tag admin-service
-  - echo "$GHCR_PAT" | docker login ghcr.io -u "$GITHUB_USER" --password-stdin
-  - docker push ghcr.io/<owner>/govindakumar-admin-service:tag
-
-- Railway deploy notes:
-  - Our `scripts/deploy_to_railway.sh` helper prints example `railway service update` commands and expects you to install the Railway CLI and provide service ids. We can help wire this to Railway API/CLI once you create your Railway project and services.
+## Other useful utilities
+- Clean up dangling Docker resources: docker system prune -a --volumes
+- Rebuild a single service image: docker compose build admin-service
+- Run DB shell: docker compose exec db psql -U postgres -d netflix_db
 
 ---
 
-# Cleanup & Notes
+## Files & Purpose (service-level explanation) 📚
 
-- SQLite (`admin-service/db.sqlite3`) and Python virtual envs were removed; the project uses Postgres now.
-- Keep secrets out of the repo; use `.env` files locally and CI/Railway secret stores in production.
+Below are the key files and what they do.
 
+- `docker-compose.yml` — Primary development compose file providing `db`, `admin-service`, `api-service`, and `portfolio-ui` services.
+- `docker-compose.override.yml` — Local overrides for Traefik labels and dev routing (used to get friendly hostnames like `admin.localhost`).
+- `docker-compose.prod.yml` — Production-oriented compose file: builds images with production env values and runs them for local validation.
+- `traefik/README.md` — How to configure Traefik and local TLS, CA/ACME notes and mkcert guidance.
+- `scripts/README.md` — How to use `scripts/build_and_push.sh` and `scripts/deploy_to_railway.sh` (used by CI for GHCR+Railway flows).
+- `admin-service/Readme.md` — Per-service README: commands to run, build, and test the Django control plane.
+- `api-service/README.md` — Per-service README: API commands, endpoints, and environment variables for the FastAPI data plane.
+- `portfolio-ui/README.md` — Per-service README: how to run Vite locally, build and serve the production image via nginx.
+
+- `traefik/` — Configuration for Traefik (local reverse proxy and optional local TLS termination):
+  - `traefik.yml` — static Traefik config (entrypoints, ACME resolver, providers)
+  - `dynamic.yml` — dynamic rules (redirect-to-https middleware)
+  - `acme.json` — ACME storage (keep out of VCS and protected)
+
+- `admin-service/` — Django app, runs under Gunicorn in production; migrations and static files are handled at container start by `entrypoint.sh`.
+- `api-service/` — FastAPI app; runs Uvicorn in production behind Traefik.
+- `portfolio-ui/` — React + Vite frontend; production build served by nginx in the Docker image.
+
+- `scripts/build_and_push.sh` — Build and push Docker images to GHCR (used by CI).
+- `scripts/deploy_to_railway.sh` — Helper to trigger Railway deploys (replace placeholders with your Railway service IDs).
+
+---
+
+If you'd like a shorter quick-reference card or to include a mkcert setup snippet, I can add it next.

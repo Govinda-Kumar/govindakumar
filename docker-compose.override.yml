@@ -15,8 +15,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - ./traefik/acme.json:/acme.json
     labels:
       - "traefik.enable=true"
 
@@ -39,4 +37,4 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.ui.rule=Host(`ui.localhost`)"
       - "traefik.http.routers.ui.entrypoints=web"
-      - "traefik.http.services.ui.loadbalancer.server.port=5173"
+      - "traefik.http.services.ui.loadbalancer.server.port=80"

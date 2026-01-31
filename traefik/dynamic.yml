@@ -5,7 +5,18 @@ http:
         scheme: https
         permanent: true
 
-  routers: {}
+  routers:
+    ui:
+      rule: Host(`ui.localhost`)
+      service: ui-service
+      entryPoints:
+        - web
+
+  services:
+    ui-service:
+      loadBalancer:
+        servers:
+          - url: http://portfolio-ui:80
 
 tls:
   options:
