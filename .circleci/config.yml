@@ -128,20 +128,29 @@ jobs:
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-api-service:${CIRCLE_SHA1}" \
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-portfolio-ui:${CIRCLE_SHA1}"
 
-      - notify_approval:
-          docker:
-            - image: cimg/python:3.12
-          steps:
-            - checkout
-            - run:
-                name: Notify Slack for manual approval
-                command: |
-                  if [ -z "${SLACK_APPROVAL_WEBHOOK}" ]; then
-                    echo "SLACK_APPROVAL_WEBHOOK not set; skipping notification."
-                    exit 0
-                  fi
-                  PAYLOAD="{\"text\": \"Deployment pending approval for *${CIRCLE_PROJECT_REPONAME}* on branch ${CIRCLE_BRANCH} (commit ${CIRCLE_SHA1}). Approve: ${CIRCLE_BUILD_URL}\"}"
-                  curl -s -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_APPROVAL_WEBHOOK" || echo "Slack notify failed"
+
+
+  notify_approval:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Send approval email (SendGrid)
+          command: |
+            if [ -z "${SENDGRID_API_KEY}" ] || [ -z "${DEPLOY_NOTIFICATION_TO_EMAIL}" ] || [ -z "${DEPLOY_NOTIFICATION_FROM_EMAIL}" ]; then
+              echo "SendGrid env vars not set; skipping email notification."
+              exit 0
+            fi
+
+            SUBJECT="Deployment pending approval for ${CIRCLE_PROJECT_REPONAME}"
+            BODY="A deployment for ${CIRCLE_PROJECT_REPONAME} on branch ${CIRCLE_BRANCH} (commit ${CIRCLE_SHA1}) is awaiting approval: ${CIRCLE_BUILD_URL}"
+
+            # Send a simple email via SendGrid API
+            curl --silent --fail -X POST "https://api.sendgrid.com/v3/mail/send" \
+              -H "Authorization: Bearer ${SENDGRID_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{"personalizations":[{"to":[{"email":"'"${DEPLOY_NOTIFICATION_TO_EMAIL}"'"}]}],"from":{"email":"'"${DEPLOY_NOTIFICATION_FROM_EMAIL}"'"},"subject":"'"${SUBJECT}"'","content":[{"type":"text/plain","value":"'"${BODY}"'"}]}' || echo "sendgrid request failed"
 
   deploy_render:
     docker:
@@ -171,10 +180,13 @@ workflows:
       - build_and_push:
           requires:
             - test
+      - notify_approval:
+          requires:
+            - build_and_push
       - hold_deploy:
           type: approval
           requires:
-            - build_and_push
+            - notify_approval
       - deploy_render:
           requires:
             - hold_deploy

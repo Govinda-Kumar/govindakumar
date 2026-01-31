@@ -115,7 +115,7 @@ Notes:
    - Ensure `GHCR_PAT` and `GHCR_OWNER` are set in CI or your environment for pushing to GHCR.
 
 5) CI/CD notes:
-- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The pipeline includes a manual approval step (job `hold_deploy`) that **requires human approval** before deploying to production. To receive a Slack notification when approval is needed, create an Incoming Webhook in Slack (Slack App → Incoming Webhooks) and add the URL as an environment variable in CircleCI named `SLACK_APPROVAL_WEBHOOK`. When set, CircleCI will POST a short message with a link to the pipeline asking for approval. The older `scripts/deploy_to_railway.sh` remains for Railway users and will need real `RAILWAY_TOKEN` and service IDs if used.
+- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The pipeline includes a manual approval step (job `hold_deploy`) that **requires human approval** before deploying to production. To receive an email notification when approval is needed, create a SendGrid API key and add the key as an environment variable in CircleCI named `SENDGRID_API_KEY`. Also add `DEPLOY_NOTIFICATION_TO_EMAIL` and `DEPLOY_NOTIFICATION_FROM_EMAIL`. When set, CircleCI will send a short email with a link to the pipeline asking for approval before the deployment can proceed. The older `scripts/deploy_to_railway.sh` remains for Railway users and will need real `RAILWAY_TOKEN` and service IDs if used.
 
 ---
 
