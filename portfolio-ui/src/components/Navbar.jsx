@@ -17,7 +17,7 @@ const Navbar = ({ setView, userProfile, onSearch }) => {
       {/* Left Side: Logo & Links */}
       <div className="flex items-center gap-4 md:gap-10">
         <h1 onClick={() => setView('home')}  className="text-netflix-red font-black text-2xl md:text-3xl tracking-tighter cursor-pointer">
-          PORTFOLIO
+          GOVINDAKUMAR
         </h1>
         <ul className="flex gap-5 text-sm">
           <li onClick={() => setView('home')} className="cursor-pointer hover:text-gray-300">Home</li>

@@ -1,6 +1,6 @@
 # GovindaKumar Portfolio
 
-## Portfolio
+## GOVINDAKUMAR
 
 govindakumar/
 │
@@ -115,14 +115,14 @@ Notes:
    - Ensure `GHCR_PAT` and `GHCR_OWNER` are set in CI or your environment for pushing to GHCR.
 
 5) CI/CD notes:
-- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR, and run `scripts/deploy_to_railway.sh` (the Railway helper needs real service IDs and `RAILWAY_TOKEN` to complete deploys).
+- CircleCI is scaffolded at `.circleci/config.yml` to run tests, build and push images to GHCR. For deploys you can use `scripts/deploy_to_render.sh` (trigger a Render deploy hook) or customize CI to call Render's API. The older `scripts/deploy_to_railway.sh` remains for Railway users and will need real `RAILWAY_TOKEN` and service IDs if used.
 
 ---
 
 ## Other useful utilities
 - Clean up dangling Docker resources: docker system prune -a --volumes
 - Rebuild a single service image: docker compose build admin-service
-- Run DB shell: docker compose exec db psql -U postgres -d netflix_db
+- Run DB shell: docker compose exec db psql -U postgres -d govindakumar_db
 
 ---
 

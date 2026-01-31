@@ -16,6 +16,11 @@ Files:
     - `RAILWAY_PROJECT_ID` — Your Railway project id.
   - This script prints example `railway service update` commands; replace the placeholder service IDs with your real service IDs before running.
 
+- `deploy_to_render.sh` — Helper that triggers a Render deploy hook (useful to trigger a Render deploy from CI).
+  - Required env vars for use:
+    - `RENDER_DEPLOY_HOOK_URL` — Render deploy webhook URL (store securely in CI).
+  - Example: `RENDER_DEPLOY_HOOK_URL=... ./scripts/deploy_to_render.sh`
+
 Notes:
 - The scripts are intentionally conservative: they show recommended usage and require you to supply secrets via environment variables (CI secrets or local env).
 - Make sure scripts have execute permission (`chmod +x scripts/*.sh`).

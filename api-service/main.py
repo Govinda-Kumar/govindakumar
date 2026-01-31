@@ -24,7 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Portfolio API", version="1.0.0")
+app = FastAPI(title="GovindaKumar API", version="1.0.0")
 
 # CORS Configuration
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")

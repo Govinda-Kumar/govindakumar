@@ -41,7 +41,7 @@ jobs:
       - run:
           name: Start test Postgres
           command: |
-            docker run -d --name ci-postgres -e POSTGRES_DB=netflix_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15
+            docker run -d --name ci-postgres -e POSTGRES_DB=${POSTGRES_DB:-govindakumar_db} -e POSTGRES_USER=${POSTGRES_USER:-postgres} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} -p 5432:5432 postgres:15
             # wait for pg to accept connections
             until docker exec ci-postgres pg_isready -U postgres -h localhost >/dev/null 2>&1; do sleep 1; done
       - run:
@@ -58,7 +58,7 @@ jobs:
           name: Run Django tests against Postgres
           command: |
             cd admin-service
-            export DATABASE_URL=postgres://postgres:postgres@localhost:5432/netflix_db
+            export DATABASE_URL=postgres://postgres:postgres@localhost:5432/${POSTGRES_DB:-govindakumar_db}
             python manage.py migrate --noinput
             python manage.py test
       - run:
@@ -128,6 +128,20 @@ jobs:
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-api-service:${CIRCLE_SHA1}" \
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-portfolio-ui:${CIRCLE_SHA1}"
 
+  deploy_render:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Trigger Render deploy hook
+          command: |
+            if [ -z "${RENDER_DEPLOY_HOOK_URL}" ]; then
+              echo "RENDER_DEPLOY_HOOK_URL is not set; skipping deploy."
+              exit 0
+            fi
+            curl -X POST -H "Content-Type: application/json" -d '{}' "${RENDER_DEPLOY_HOOK_URL}"
+
 workflows:
   version: 2
   build_test_and_push:
@@ -142,3 +156,9 @@ workflows:
       - build_and_push:
           requires:
             - test
+      - deploy_render:
+          requires:
+            - build_and_push
+          filters:
+            branches:
+              only: main

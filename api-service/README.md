@@ -17,7 +17,7 @@ Database / migrations:
 - Currently the repo uses plain SQLAlchemy models. If you add DB migrations, consider integrating Alembic for schema migrations and add migration commands to CI.
 
 Environment variables reminder:
-- `DATABASE_URL` — e.g. `postgres://postgres:postgres@db:5432/netflix_db`
+- `DATABASE_URL` — e.g. `postgres://postgres:postgres@db:5432/govindakumar_db`
 - `ENV` — `development` or `production` (controls CORS and logging)
 
 ## Build & run (production-like)
@@ -34,7 +34,7 @@ Environment variables reminder:
 - GET /projects/search?q=<query> — Search projects
 
 ## Environment variables
-- `DATABASE_URL` — Postgres connection string, e.g., postgresql://user:pass@db:5432/netflix_db
+- `DATABASE_URL` — Postgres connection string, e.g., postgresql://user:pass@db:5432/govindakumar_db
 - `ENV` — Set to `production` in prod to tighten CORS
 - `CORS_ALLOWED_ORIGINS` — Comma-separated list of allowed origins in production
 
