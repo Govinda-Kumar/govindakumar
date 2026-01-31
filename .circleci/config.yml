@@ -45,19 +45,23 @@ jobs:
   integration_tests:
     docker:
       - image: cimg/python:3.12
+      - image: cimg/postgres:15.3
+        environment:
+          POSTGRES_DB: govindakumar_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
     steps:
       - checkout
       - restore_cache:
           keys:
             - v1-pip-cache-{{ checksum "admin-service/requirements.txt" }}
             - v1-pip-cache-
-      - setup_remote_docker
       - run:
-          name: Start test Postgres
+          name: Wait for Postgres
           command: |
-            docker run -d --name ci-postgres -e POSTGRES_DB=${POSTGRES_DB:-govindakumar_db} -e POSTGRES_USER=${POSTGRES_USER:-postgres} -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres} -p 5432:5432 postgres:15
-            # wait for pg to accept connections
-            until docker exec ci-postgres pg_isready -U postgres -h localhost >/dev/null 2>&1; do sleep 1; done
+            for i in $(seq 1 30); do
+              pg_isready -h localhost -U postgres && break || sleep 1
+            done
       - run:
           name: Install Python deps
           command: |
@@ -80,10 +84,6 @@ jobs:
           command: |
             cd api-service
             pytest -q
-      - run:
-          name: Teardown DB
-          command: |
-            docker rm -f ci-postgres || true
 
   test:
     docker:
