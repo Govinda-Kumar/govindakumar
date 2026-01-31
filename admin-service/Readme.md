@@ -6,14 +6,22 @@ This directory contains the Django project used to manage the portfolio content 
 
 - Start local dev (using docker-compose):
   - docker compose up -d admin-service
-- Run Django shell:
-  - docker compose exec admin-service python manage.py shell
-- Run migrations (container):
+- Start a Django dev server (container):
+  - docker compose exec admin-service python manage.py runserver 0.0.0.0:8000
+- Make migrations (after changing models):
+  - docker compose exec admin-service python manage.py makemigrations
+- Apply migrations:
   - docker compose exec admin-service python manage.py migrate
+- Collect static files (if needed):
+  - docker compose exec admin-service python manage.py collectstatic --noinput
 - Create superuser (interactive):
   - docker compose exec admin-service python manage.py createsuperuser
 - Run tests:
   - docker compose exec admin-service python manage.py test
+
+Notes on static files:
+- Best practice: do not commit `staticfiles/` to version control. Use `collectstatic` as part of the build process (CI or Dockerfile) and serve the generated files from the container or an external storage (CDN or object storage) in production.
+- If you must commit them for quick local testing, add them deliberately and remember to remove them or switch to a build-step later.
 
 ## Building & running the production image
 

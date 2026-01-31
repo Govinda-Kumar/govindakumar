@@ -7,6 +7,8 @@ entryPoints:
 providers:
   docker:
     exposedByDefault: false
+  file:
+    filename: /etc/traefik/dynamic.yml
 
 api:
   dashboard: true
@@ -15,4 +17,5 @@ api:
 log:
   level: INFO
 
-# Note: ACME/file provider disabled for local development to avoid intermittent reloads and permission issues.
+# Note: File provider enabled to allow mounting of local TLS certificates generated with mkcert.
+# For local development, generate certs into `./traefik/certs` and mount them into the container at `/certs`.

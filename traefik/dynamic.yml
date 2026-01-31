@@ -1,16 +1,45 @@
 http:
+  routers:
+    # File-provider redirect routers (HTTP -> HTTPS)
+    admin-redirect:
+      rule: Host(`admin.localhost`)
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https@file
+      service: noop@internal
+      priority: 100
+
+    api-redirect:
+      rule: Host(`api.localhost`)
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https@file
+      service: noop@internal
+      priority: 100
+
+    ui-redirect:
+      rule: Host(`ui.localhost`)
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https@file
+      service: noop@internal
+      priority: 100
+
+    ui:
+      rule: Host(`ui.localhost`)
+      service: ui-service
+      entryPoints:
+        - websecure
+      tls: {}
+
   middlewares:
     redirect-to-https:
       redirectScheme:
         scheme: https
         permanent: true
-
-  routers:
-    ui:
-      rule: Host(`ui.localhost`)
-      service: ui-service
-      entryPoints:
-        - web
 
   services:
     ui-service:
@@ -19,6 +48,9 @@ http:
           - url: http://portfolio-ui:80
 
 tls:
+  certificates:
+    - certFile: /certs/localhost.pem
+      keyFile: /certs/localhost-key.pem
   options:
     default:
       minVersion: VersionTLS12

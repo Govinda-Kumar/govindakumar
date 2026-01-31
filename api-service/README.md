@@ -8,10 +8,17 @@ This directory contains the FastAPI service that provides JSON APIs consumed by 
   - uvicorn main:app --reload --host 0.0.0.0 --port 8001
 - Start with Docker Compose (dev):
   - docker compose up -d api-service
-- Run tests (if present):
-  - (Add pytest-based tests) pytest
-- Run DB-related operations:
-  - Ensure `DATABASE_URL` points to a working Postgres instance (see `.env.example`)
+- Run tests (pytest):
+  - pytest
+- Simple curl health check (via Traefik):
+  - curl -H "Host: api.localhost" http://localhost/health
+
+Database / migrations:
+- Currently the repo uses plain SQLAlchemy models. If you add DB migrations, consider integrating Alembic for schema migrations and add migration commands to CI.
+
+Environment variables reminder:
+- `DATABASE_URL` — e.g. `postgres://postgres:postgres@db:5432/netflix_db`
+- `ENV` — `development` or `production` (controls CORS and logging)
 
 ## Build & run (production-like)
 

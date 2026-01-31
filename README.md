@@ -54,13 +54,37 @@ Prerequisites:
    - cp portfolio-ui/.env.example portfolio-ui/.env
 
 2) Start Traefik + core services (development):
-   - docker compose up -d traefik db admin-service api-service portfolio-ui
+   - Note: Services are served over HTTPS locally (https://admin.localhost, https://api.localhost, https://ui.localhost).
+   - For browser-trusted site certificates, install `mkcert` and run `scripts/generate_mkcert.sh` (this will write certs to `traefik/certs/` which is mounted into Traefik).
+   - Restart Traefik after generating certs: `docker compose up -d --force-recreate traefik`.
+   - Start services: `docker compose up -d traefik db admin-service api-service portfolio-ui`
 
 3) Useful local commands:
-   - View logs: docker compose logs -f admin-service
+   - View logs (tail): docker compose logs -f admin-service
    - Restart a service: docker compose restart admin-service
    - Execute a shell in a service: docker compose exec admin-service sh
-   - Run Django management commands locally: docker compose exec admin-service python manage.py migrate
+   - Run Django management commands (examples):
+     - Make migrations (after model changes): docker compose exec admin-service python manage.py makemigrations
+     - Apply migrations: docker compose exec admin-service python manage.py migrate
+     - Collect static files: docker compose exec admin-service python manage.py collectstatic --noinput
+     - Create superuser (interactive): docker compose exec admin-service python manage.py createsuperuser
+   - Run project tests (Django / Python): docker compose exec admin-service python manage.py test
+   - Test FastAPI health locally (via Traefik): curl -H "Host: api.localhost" http://localhost/health
+   - Test via HTTPS (Traefik): curl -vk -H "Host: admin.localhost" https://localhost/
+
+How to test locally (end-to-end):
+   1. (Optional/prod-like) Generate trusted certs with mkcert: `./scripts/generate_mkcert.sh` (see `traefik/README.md`).
+   2. Restart Traefik to pick up certs: `docker compose up -d --force-recreate traefik`.
+   3. Start the stack: `docker compose up -d traefik db admin-service api-service portfolio-ui`.
+   4. Wait for the DB to become healthy, then verify:
+      - `curl -H "Host: api.localhost" http://localhost/health` (should return {"status":"healthy"})
+      - `curl -vk -H "Host: admin.localhost" https://localhost/` (Django admin UI)
+      - `curl -vk -H "Host: ui.localhost" https://localhost/` (Frontend index)
+   5. Use `docker compose logs -f <service>` to follow logs while testing.
+
+Static files guidance:
+   - Recommended: **do not commit** generated `staticfiles` to git. Instead run `collectstatic` during an image build or via CI, and serve them from the container (or a CDN/bucket) in production.
+   - If you need a quick local workaround and want to persist `staticfiles` in the repo temporarily, you may commit them, but be aware this is not recommended for long-term workflows. If you prefer to keep `staticfiles` out of VCS, add `/admin-service/staticfiles/` to `.gitignore`.
 
 4) Access services in browser:
    - Django: https://admin.localhost
@@ -127,6 +151,3 @@ Below are the key files and what they do.
 - `scripts/build_and_push.sh` — Build and push Docker images to GHCR (used by CI).
 - `scripts/deploy_to_railway.sh` — Helper to trigger Railway deploys (replace placeholders with your Railway service IDs).
 
----
-
-If you'd like a shorter quick-reference card or to include a mkcert setup snippet, I can add it next.

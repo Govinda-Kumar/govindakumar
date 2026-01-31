@@ -3,6 +3,50 @@ orbs:
   python: circleci/python@1.5.0
 
 jobs:
+  migrations_check:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run: python -m pip install -r admin-service/requirements.txt
+      - run:
+          name: Check for missing Django migrations
+          command: |
+            cd admin-service
+            # Will return non-zero if models changed but no migration exists
+            python manage.py makemigrations --dry-run --check
+
+  integration_tests:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Start test Postgres
+          command: |
+            docker run -d --name ci-postgres -e POSTGRES_DB=netflix_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15
+            # wait for pg to accept connections
+            until docker exec ci-postgres pg_isready -U postgres -h localhost >/dev/null 2>&1; do sleep 1; done
+      - run: python -m pip install -r admin-service/requirements.txt
+      - run: python -m pip install -r api-service/requirements.txt
+      - run:
+          name: Run Django tests against Postgres
+          command: |
+            cd admin-service
+            export DATABASE_URL=postgres://postgres:postgres@localhost:5432/netflix_db
+            python manage.py migrate --noinput
+            python manage.py test
+      - run:
+          name: Placeholder - API integration tests
+          command: |
+            # Add pytest or requests-based integration tests for the API here
+            echo "Add FastAPI integration tests here"
+      - run:
+          name: Teardown DB
+          command: |
+            docker rm -f ci-postgres || true
+
   test:
     docker:
       - image: cimg/python:3.12
@@ -51,7 +95,13 @@ workflows:
   version: 2
   build_test_and_push:
     jobs:
-      - test
+      - migrations_check
+      - integration_tests:
+          requires:
+            - migrations_check
+      - test:
+          requires:
+            - integration_tests
       - build_and_push:
           requires:
             - test
