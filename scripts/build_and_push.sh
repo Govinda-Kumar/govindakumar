@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Usage: ./scripts/build_and_push.sh <tag>
 TAG=${1:-${GIT_TAG:-${CIRCLE_SHA1:-latest}}}
-OWNER=${GHCR_OWNER:-$GITHUB_USER}
+OWNER=${GHCR_OWNER:-${GITHUB_USER:-}}
 REPO=${GHCR_REPO:-govindakumar}
 
 if [ -z "$OWNER" ]; then

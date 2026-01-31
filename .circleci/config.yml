@@ -142,88 +142,6 @@ jobs:
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-api-service:${CIRCLE_SHA1}" \
               "ghcr.io/${GHCR_OWNER:-${GITHUB_USER}}/${GHCR_REPO:-govindakumar}-portfolio-ui:${CIRCLE_SHA1}"
 
-
-
-  notify_approval:
-    docker:
-      - image: cimg/python:3.12
-    steps:
-      - checkout
-      - run:
-          name: Send approval email (Brevo HTML)
-          command: |
-            if [ -z "${BREVO_API_KEY}" ] || [ -z "${BREVO_FROM_EMAIL}" ] || [ -z "${DEPLOY_NOTIFICATION_TO_EMAIL}" ]; then
-              echo "Brevo env vars not set; skipping email notification."
-              exit 0
-            fi
-
-            SUBJECT="Deployment pending approval for ${CIRCLE_PROJECT_REPONAME}"
-
-            HTML_BODY="<html><body style=\"font-family:Arial,sans-serif;color:#111\">\
-              <h2>Deployment pending approval</h2>\
-              <p>A deployment for <strong>${CIRCLE_PROJECT_REPONAME}</strong> on branch <code>${CIRCLE_BRANCH}</code> (commit <code>${CIRCLE_SHA1}</code>) is awaiting your approval.</p>\
-              <p><a href=\"${CIRCLE_BUILD_URL}\" style=\"display:inline-block;padding:10px 14px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none\">Open pipeline & approve</a></p>\
-              <p style=\"color:#6b7280;font-size:13px\">You can approve the pipeline in CircleCI to continue with deploy. This message is automated.</p>\
-            </body></html>"
-
-            # Send with Brevo (SendinBlue) API
-            PAYLOAD=$(jq -n --arg from_email "${BREVO_FROM_EMAIL}" --arg from_name "${BREVO_FROM_NAME:-GovindaKumar CI}" --arg to_email "${DEPLOY_NOTIFICATION_TO_EMAIL}" --arg subject "$SUBJECT" --arg html "$HTML_BODY" '{sender:{email:$from_email,name:$from_name},to:[{email:$to_email}],subject:$subject,htmlContent:$html}')
-
-            curl -s -X POST "https://api.brevo.com/v3/smtp/email" \
-              -H "accept: application/json" \
-              -H "content-type: application/json" \
-              -H "api-key: ${BREVO_API_KEY}" \
-              -d "$PAYLOAD" || echo "brevo request failed"
-
-  smoke_test:
-    docker:
-      - image: cimg/python:3.12
-    steps:
-      - checkout
-      - run:
-          name: Run smoke tests (curl /health)
-          command: |
-            chmod +x scripts/smoke_test.sh
-            # Run tests; capture exit code but continue to send report
-            ./scripts/smoke_test.sh > /tmp/smoke_report.txt || true
-            cat /tmp/smoke_report.txt
-            RC=$?
-      - run:
-          name: Send smoke test report (Brevo)
-          command: |
-            if [ -z "${BREVO_API_KEY}" ] || [ -z "${BREVO_FROM_EMAIL}" ] || [ -z "${DEPLOY_REPORT_EMAIL}" ]; then
-              echo "Brevo or report email env vars not set; skipping report email."
-              exit 0
-            fi
-
-            # Read report and sanitize for HTML
-            REPORT_HTML=$(awk 'BEGIN{print "<pre style=\"font-family:monospace;white-space:pre-wrap;\">"} {gsub("&","&amp;"); gsub("<","&lt;"); gsub(">","&gt;"); print} END{print "</pre>"}' /tmp/smoke_report.txt)
-            SUBJECT="Deployment report: ${CIRCLE_PROJECT_REPONAME} - $( [ -s /tmp/smoke_report.txt ] && grep -q FAIL /tmp/smoke_report.txt && echo FAILED || echo SUCCESS )"
-
-            HTML_BODY="<html><body style=\"font-family:Arial,sans-serif;color:#111\">\
-              <h2>${SUBJECT}</h2>\
-              <p>Pipeline: <a href=\"${CIRCLE_BUILD_URL}\">Open in CircleCI</a></p>\
-              <h3>Report</h3>\
-              ${REPORT_HTML}\
-            </body></html>"
-
-            PAYLOAD=$(jq -n --arg from_email "${BREVO_FROM_EMAIL}" --arg from_name "${BREVO_FROM_NAME:-GovindaKumar CI}" --arg to_email "${DEPLOY_REPORT_EMAIL}" --arg subject "$SUBJECT" --arg html "$HTML_BODY" '{sender:{email:$from_email,name:$from_name},to:[{email:$to_email}],subject:$subject,htmlContent:$html}')
-
-            curl -s -X POST "https://api.brevo.com/v3/smtp/email" \
-              -H "accept: application/json" \
-              -H "content-type: application/json" \
-              -H "api-key: ${BREVO_API_KEY}" \
-              -d "$PAYLOAD" || echo "brevo report request failed"
-
-      - run:
-          name: Exit with smoke test status
-          command: |
-            # Exit non-zero if the smoke tests failed
-            if grep -q "FAIL" /tmp/smoke_report.txt; then
-              echo "Smoke tests failed"
-              exit 2
-            fi
-            echo "Smoke tests passed"
   deploy_render:
     docker:
       - image: cimg/python:3.12
@@ -252,16 +170,12 @@ workflows:
       - build_and_push:
           requires:
             - test
-      - notify_approval:
-          requires:
-            - build_and_push
-      - hold_deploy:
-          type: approval
-          requires:
-            - notify_approval
+          filters:
+            branches:
+              only: main
       - deploy_render:
           requires:
-            - hold_deploy
+            - build_and_push
           filters:
             branches:
               only: main
