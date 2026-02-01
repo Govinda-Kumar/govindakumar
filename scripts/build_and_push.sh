@@ -11,6 +11,10 @@ if [ -z "$OWNER" ]; then
   exit 1
 fi
 
+# Convert to lowercase (Docker registry requires lowercase)
+OWNER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+REPO=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+
 IMAGE_ADMIN=ghcr.io/${OWNER}/${REPO}-admin-service:${TAG}
 IMAGE_API=ghcr.io/${OWNER}/${REPO}-api-service:${TAG}
 IMAGE_UI=ghcr.io/${OWNER}/${REPO}-portfolio-ui:${TAG}
