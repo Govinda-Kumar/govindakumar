@@ -3,15 +3,19 @@ set -e
 
 # Parse DATABASE_URL if set, otherwise use defaults
 if [ -n "${DATABASE_URL}" ]; then
-  # Extract host and port from DATABASE_URL
-  # Format: postgresql://user:pass@host:port/db
-  POSTGRES_HOST=$(echo $DATABASE_URL | sed -n 's|.*@\([^:]*\):.*|\1|p')
-  POSTGRES_PORT=$(echo $DATABASE_URL | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
+  echo "DATABASE_URL is set, extracting connection details..."
+  # Extract host from DATABASE_URL
+  # Format: postgresql://user:pass@host:port/db or postgresql://user:pass@host/db
+  POSTGRES_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+).*|\1|')
+  # Extract port if present, otherwise use 5432
+  POSTGRES_PORT=$(echo "$DATABASE_URL" | grep -oE ':[0-9]+/' | tr -d ':/' || echo "5432")
+  [ -z "$POSTGRES_PORT" ] && POSTGRES_PORT=5432
+  echo "Extracted host: $POSTGRES_HOST, port: $POSTGRES_PORT"
+else
+  POSTGRES_HOST=${POSTGRES_HOST:-db}
+  POSTGRES_PORT=${POSTGRES_PORT:-5432}
+  echo "Using default host: $POSTGRES_HOST, port: $POSTGRES_PORT"
 fi
-
-# Use extracted values or defaults
-POSTGRES_HOST=${POSTGRES_HOST:-db}
-POSTGRES_PORT=${POSTGRES_PORT:-5432}
 
 echo "Waiting for Postgres at $POSTGRES_HOST:$POSTGRES_PORT..."
 until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" >/dev/null 2>&1; do
