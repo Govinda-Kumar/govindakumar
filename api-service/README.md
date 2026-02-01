@@ -1,50 +1,45 @@
-# api-service — FastAPI (Data Plane)
+# API Service
 
-This directory contains the FastAPI service that provides JSON APIs consumed by the frontend and other services.
+FastAPI-based REST API providing JSON endpoints for the portfolio application.
 
-## Useful commands (development)
+## Quick Start
 
-- Start dev server locally (with reload):
-  - uvicorn main:app --reload --host 0.0.0.0 --port 8001
-- Start with Docker Compose (dev):
-  - docker compose up -d api-service
-- Run tests (pytest):
-  - pytest
-- Simple curl health check (via Traefik):
-  - curl -H "Host: api.localhost" http://localhost/health
+```bash
+# Start service
+docker compose up -d api-service
 
-Database / migrations:
-- Currently the repo uses plain SQLAlchemy models. If you add DB migrations, consider integrating Alembic for schema migrations and add migration commands to CI.
+# Access API docs
+https://api.localhost/docs
 
-Environment variables reminder:
-- `DATABASE_URL` — e.g. `postgres://postgres:postgres@db:5432/govindakumar_db`
-- `ENV` — `development` or `production` (controls CORS and logging)
+# Health check
+curl -H "Host: api.localhost" http://localhost/health
+```
 
-## Build & run (production-like)
+## Common Commands
 
-- Build Docker image locally: docker build -t govindakumar-api-service:local -f api-service/Dockerfile api-service
-- Run container: docker run -p 8001:8001 --env DATABASE_URL=postgres://... govindakumar-api-service:local
-- When running under Compose we use `api-service/entrypoint.sh` to wait for Postgres and then start the server.
+```bash
+# Run tests
+docker compose exec api-service pytest
 
-## Endpoints (examples)
-- GET /                — Basic health/root endpoint
-- GET /health          — Health check
-- GET /projects        — List/filter projects
-- GET /projects/featured — Featured project
-- GET /projects/search?q=<query> — Search projects
+# View logs
+docker compose logs -f api-service
+```
 
-## Environment variables
-- `DATABASE_URL` — Postgres connection string, e.g., postgresql://user:pass@db:5432/govindakumar_db
-- `ENV` — Set to `production` in prod to tighten CORS
-- `CORS_ALLOWED_ORIGINS` — Comma-separated list of allowed origins in production
+## API Endpoints
 
-## Files & their jobs
-- `main.py` — FastAPI app and route definitions (CORS, logging, health checks)
-- `database.py` — SQLAlchemy engine and session helper (`get_db` used as dependency)
-- `models.py` / `schemas.py` — DB models and pydantic schemas
-- `Dockerfile` — Builds the image and uses `entrypoint.sh` to wait for Postgres before starting Uvicorn
-- `entrypoint.sh` — Waits for the DB to be available before launching the app
+- `GET /` - Root endpoint
+- `GET /health` - Health check
+- `GET /projects` - List/filter projects
+- `GET /projects/featured` - Get featured project
+- `GET /projects/search?q=query` - Search projects
 
-Notes:
-- Currently we use plain SQLAlchemy models; if you add migrations consider integrating Alembic.
-- Keep sensitive info out of the repo and provide production credentials via CI/Render secrets.
+## Configuration
+
+Environment variables (configured in docker-compose.yml or Render):
+- `DATABASE_URL` - PostgreSQL connection string
+- `ENV` - Environment (development/production)
+- `CORS_ALLOWED_ORIGINS` - Comma-separated allowed origins
+
+## Documentation
+
+See the [main README](../README.md) for complete setup and deployment instructions.

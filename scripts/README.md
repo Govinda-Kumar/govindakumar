@@ -1,26 +1,31 @@
-# scripts — Helper automation
+# Scripts
 
-This directory contains helper shell scripts used by CI and for manual workflows.
+Helper automation scripts for CI/CD and local development.
 
-## Build & Push
-- `build_and_push.sh` — Builds Docker images for `admin-service`, `api-service`, and `portfolio-ui`, tags them for GHCR and pushes them.
-  - Required env vars:
-    - `GHCR_PAT` — GitHub personal access token with `write:packages`.
-    - `GHCR_OWNER` — GitHub username/org under which images will be pushed.
-    - `GHCR_REPO` — Optional repo prefix (defaults to `govindakumar`).
-  - Example: `GHCR_PAT=... GHCR_OWNER=myuser ./scripts/build_and_push.sh my-tag`
+## Available Scripts
 
-## Deployment
-- `deploy_to_render.sh` — Triggers a Render deploy hook (used by CircleCI to deploy after approval).
-  - Required env vars:
-    - `RENDER_DEPLOY_HOOK_URL` — Render deploy webhook URL (store securely in CI).
-  - Example: `RENDER_DEPLOY_HOOK_URL=... ./scripts/deploy_to_render.sh`
+### CI/CD
+- `build_and_push.sh` - Build and push Docker images to GHCR
+- `deploy_to_render.sh` - Trigger Render deployment via webhook
 
-## Local Development
-- `generate_mkcert.sh` — Generates local TLS certificates using mkcert for HTTPS development.
-- `validate_certs.sh` — Validates that local TLS certificates exist and are properly configured.
-- `local_check.sh` — Runs local environment checks (POSIX-compatible).
+### Local Development
+- `generate_mkcert.sh` - Generate local TLS certificates with mkcert
+- `validate_certs.sh` - Validate TLS certificate configuration
+- `local_check.sh` - Run local environment health checks
 
-Notes:
-- The scripts are intentionally conservative: they show recommended usage and require you to supply secrets via environment variables (CI secrets or local env).
-- Make sure scripts have execute permission (`chmod +x scripts/*.sh`).
+## Usage
+
+```bash
+# Make scripts executable
+chmod +x scripts/*.sh
+
+# Generate local HTTPS certificates
+./scripts/generate_mkcert.sh
+
+# Validate certificates
+./scripts/validate_certs.sh
+```
+
+## Documentation
+
+See the [main README](../README.md) for complete setup and deployment instructions.
