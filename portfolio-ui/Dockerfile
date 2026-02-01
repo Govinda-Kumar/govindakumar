@@ -5,6 +5,10 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Accept build argument for API URL
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Copy package files
 COPY package*.json ./
 
@@ -15,7 +19,7 @@ RUN npm cache clean --force && \
 # Copy source code
 COPY . .
 
-# Build the optimized production bundle
+# Build the optimized production bundle with env vars baked in
 RUN npm run build
 
 # Verify build output

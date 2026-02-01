@@ -56,11 +56,11 @@ services:
     build:
       context: ./portfolio-ui
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://govindakumar-api.onrender.com}
     platform: linux/arm64
     ports:
       - "80:80"
-    environment:
-      - VITE_API_URL=${VITE_API_URL}
     depends_on:
       - api-service
     restart: unless-stopped

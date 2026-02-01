@@ -4,6 +4,17 @@ set -e
 # Use PORT from environment or default to 80
 PORT=${PORT:-80}
 
+# Inject runtime configuration
+VITE_API_URL=${VITE_API_URL:-http://localhost:8001}
+echo "Injecting VITE_API_URL: $VITE_API_URL"
+
+cat > /usr/share/nginx/html/config.js <<EOF
+// Runtime configuration
+window.ENV_CONFIG = {
+  VITE_API_URL: '${VITE_API_URL}'
+};
+EOF
+
 # Create nginx config with dynamic port
 cat > /etc/nginx/conf.d/default.conf <<EOF
 server {
