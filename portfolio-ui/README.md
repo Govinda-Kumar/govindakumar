@@ -48,6 +48,3 @@ Environment variables (configured in docker-compose.yml or Render):
 - `nginx.conf` - Production nginx configuration
 - `Dockerfile` - Multi-stage build (npm build → nginx serve)
 
-## Documentation
-
-See the [main README](../README.md) for complete setup and deployment instructions.

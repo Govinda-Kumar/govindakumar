@@ -26,6 +26,3 @@ chmod +x scripts/*.sh
 ./scripts/validate_certs.sh
 ```
 
-## Documentation
-
-See the [main README](../README.md) for complete setup and deployment instructions.

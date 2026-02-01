@@ -37,7 +37,3 @@ Environment variables (configured in docker-compose.yml or Render):
 - `DJANGO_ALLOWED_HOSTS` - Allowed hosts
 - `DATABASE_URL` - PostgreSQL connection string
 - `CORS_ALLOWED_ORIGINS` - CORS allowed origins
-
-## Documentation
-
-See the [main README](../README.md) for complete setup and deployment instructions.

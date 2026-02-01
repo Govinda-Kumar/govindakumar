@@ -40,6 +40,3 @@ Environment variables (configured in docker-compose.yml or Render):
 - `ENV` - Environment (development/production)
 - `CORS_ALLOWED_ORIGINS` - Comma-separated allowed origins
 
-## Documentation
-
-See the [main README](../README.md) for complete setup and deployment instructions.

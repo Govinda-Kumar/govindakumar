@@ -28,7 +28,3 @@ docker compose up -d --force-recreate traefik
 - API: https://api.localhost/docs
 - UI: https://ui.localhost
 - Dashboard: http://localhost:8080
-
-## Documentation
-
-See the [main README](../README.md) for complete setup instructions.
